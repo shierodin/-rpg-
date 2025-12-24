@@ -112,15 +112,17 @@ tr:hover { background: #1e1e1e; }
 </div>
 
 <script>
+/* ===== DOM 요소 ===== */
 const mainScreen = document.getElementById("mainScreen");
 const calcScreen = document.getElementById("calcScreen");
 const cancelBtn = document.getElementById("cancelBtn");
 const search = document.getElementById("search");
-
 const ticket = document.getElementById("ticket");
 const value = document.getElementById("value");
 const result = document.getElementById("result");
+const table = document.getElementById("itemTable");
 
+/* ===== 아이템 데이터 (완전 수정본) ===== */
 const items = [
  ["다이아","12~15","1",""],
  ["마그마 코어","2","1",""],
@@ -157,15 +159,14 @@ const items = [
  ["일섬","1","1~2","추정"]
 ];
 
-const table = document.getElementById("itemTable");
-
+/* ===== 테이블 ===== */
 function renderTable(data) {
     table.innerHTML = "";
-    data.forEach(i => {
+    data.forEach(item => {
         const tr = document.createElement("tr");
-        i.forEach(t => {
+        item.forEach(text => {
             const td = document.createElement("td");
-            td.textContent = t;
+            td.textContent = text;
             tr.appendChild(td);
         });
         table.appendChild(tr);
@@ -177,6 +178,7 @@ function filterItems() {
     renderTable(items.filter(i => i[0].toLowerCase().includes(key)));
 }
 
+/* ===== 계산기 ===== */
 function openCalculator() {
     mainScreen.classList.add("hidden");
     calcScreen.classList.remove("hidden");
@@ -196,11 +198,9 @@ function calculate() {
         result.textContent = "값을 입력하세요";
         return;
     }
-    result.textContent = `교환 가능 수량: ${t / v} 개`;
+    result.textContent = `교환 가능 수량: ${Math.floor(t / v)} 개`;
 }
 
+/* ===== 초기 실행 ===== */
 renderTable(items);
 </script>
-
-</body>
-</html>
