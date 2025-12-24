@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>제목없는 RPG 가치표</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: #eee;
+        padding: 20px;
+    }
+    h1 {
+        text-align: center;
+    }
+    input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        font-size: 16px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid #444;
+        padding: 8px;
+        text-align: center;
+    }
+    th {
+        background: #222;
+    }
+    tr:hover {
+        background: #1e1e1e;
+    }
+</style>
+</head>
+<body>
+
+<h1>제목없는 RPG 가치표 (강방권 기준)</h1>
+
+<input type="text" id="search" placeholder="아이템 이름 검색..." onkeyup="filterItems()">
+
+<table>
+    <thead>
+        <tr>
+            <th>아이템</th>
+            <th>아이템 수량</th>
+            <th>강방권 가치</th>
+            <th>비고</th>
+        </tr>
+    </thead>
+    <tbody id="itemTable"></tbody>
+</table>
+
+<script>
+const items = [
+    ["다이아", "12~15", "1", ""],
+    ["마그마 코어", "2", "1", ""],
+    ["태초의 전기", "1", "1", ""],
+    ["태초의 암석", "1", "1+", ""],
+    ["태초의 빛", "1", "4", "이세계 2~3"],
+    ["태초의 광석", "1", "5+", "이세계 2~3"],
+    ["알 수 없는 스킬", "1", "5+", "이세계 3"],
+    ["알 수 없는 종이", "1", "3+", "이세계 1~3"],
+    ["돈", "1m", "5+", ""],
+    ["마나석", "100+", "1", ""],
+    ["마나정수", "10~15", "1", ""],
+    ["조화석", "8+", "1", ""],
+    ["용력석", "1", "17+", ""],
+    ["저주핵", "1", "4", ""],
+    ["오래된 저주 껍데기", "1", "14+", ""],
+    ["저주", "80~100", "1", ""],
+    ["채굴의 정석 (스킬)", "1", "12+", ""],
+    ["일점 집중 (스킬)", "1", "3+", ""],
+    ["벚꽃", "40~50", "1", ""],
+    ["파라다이스 수장의 인정", "1", "7++", ""],
+    ["낙화참 (스킬)", "1", "110++", ""],
+    ["회전 참수 (스킬)", "1", "50++", ""],
+    ["프로스트 정수", "1", "2", ""],
+    ["한철", "1", "40", ""],
+    ["검기 (스킬)", "1", "150+++", "추정"],
+    ["에테르", "1", "3", ""],
+    ["황금 망각의 스프", "1", "7++", ""],
+    ["황혼의 파편", "1", "5", ""],
+    ["잿빛 심장석", "1", "5", ""],
+    ["심홍의 청수", "1", "17++", ""]
+];
+
+const table = document.getElementById("itemTable");
+
+function renderTable(data) {
+    table.innerHTML = "";
+    data.forEach(item => {
+        const row = document.createElement("tr");
+        item.forEach(text => {
+            const td = document.createElement("td");
+            td.textContent = text;
+            row.appendChild(td);
+        });
+        table.appendChild(row);
+    });
+}
+
+function filterItems() {
+    const keyword = document.getElementById("search").value.toLowerCase();
+    const filtered = items.filter(item =>
+        item[0].toLowerCase().includes(keyword)
+    );
+    renderTable(filtered);
+}
+
+renderTable(items);
+</script>
+
+</body>
+</html>
