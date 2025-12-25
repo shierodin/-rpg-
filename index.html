@@ -24,6 +24,7 @@ th { background:#222; }
   background:#1a1a1a;
 }
 .comment strong { color:#6cf; }
+.comment time { font-size:12px; color:#aaa; }
 </style>
 </head>
 
@@ -31,7 +32,7 @@ th { background:#222; }
 
 <h1>제목없는 RPG 가치표 (강방권 기준)</h1>
 
-<!-- ===== 로그인 ===== -->
+<!-- 로그인 -->
 <h2>🔐 로그인 / 회원가입</h2>
 <input id="nick" placeholder="닉네임">
 <input id="pw" type="password" placeholder="비밀번호">
@@ -42,10 +43,10 @@ th { background:#222; }
 
 <hr>
 
-<!-- ===== 검색 ===== -->
+<!-- 검색 -->
 <input id="search" placeholder="아이템 검색" onkeyup="filterItems()">
 
-<!-- ===== 가치표 ===== -->
+<!-- 가치표 -->
 <table>
 <thead>
 <tr>
@@ -60,21 +61,20 @@ th { background:#222; }
 
 <hr>
 
-<!-- ===== 댓글 ===== -->
-<h2>💬 댓글</h2>
+<!-- 댓글 -->
+<h2>💬 댓글 (실시간 / 박제)</h2>
 <textarea id="commentText" placeholder="로그인 후 댓글 작성 가능"></textarea>
 <button onclick="addComment()">댓글 작성</button>
 <div id="commentList"></div>
 
-<!-- ===== Firebase ===== -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, getDocs,
-  query, where, onSnapshot, serverTimestamp
+  query, where, onSnapshot, serverTimestamp, orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* 🔴 네 Firebase 설정 넣기 */
+/* 🔴 Firebase 설정 */
 const firebaseConfig = {
   apiKey: "여기에",
   authDomain: "여기에",
@@ -87,30 +87,31 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore();
 
-/* ===== 로그인 상태 ===== */
-let currentUser = null;
+/* ===== 로그인 유지 ===== */
+let currentUser = localStorage.getItem("user");
 const stateText = document.getElementById("loginState");
 const logoutBtn = document.getElementById("logoutBtn");
 
-/* ===== 회원가입 ===== */
+if (currentUser) {
+  stateText.textContent = "로그인: " + currentUser;
+  logoutBtn.classList.remove("hidden");
+}
+
+/* 회원가입 */
 window.signup = async () => {
   const n = nick.value.trim();
   const p = pw.value.trim();
-  if (!n || !p) return alert("닉네임/비밀번호 입력");
+  if (!n || !p) return alert("입력해라");
 
   const q = query(collection(db,"users"), where("nick","==",n));
   const snap = await getDocs(q);
-
-  if (!snap.empty) {
-    alert("이미 존재하는 닉네임");
-    return;
-  }
+  if (!snap.empty) return alert("이미 존재하는 닉네임");
 
   await addDoc(collection(db,"users"), { nick:n, pw:p });
   alert("회원가입 완료");
 };
 
-/* ===== 로그인 ===== */
+/* 로그인 */
 window.login = async () => {
   const q = query(
     collection(db,"users"),
@@ -118,25 +119,23 @@ window.login = async () => {
     where("pw","==",pw.value.trim())
   );
   const snap = await getDocs(q);
-
-  if (snap.empty) {
-    alert("로그인 실패");
-    return;
-  }
+  if (snap.empty) return alert("로그인 실패");
 
   currentUser = nick.value.trim();
+  localStorage.setItem("user", currentUser);
   stateText.textContent = "로그인: " + currentUser;
   logoutBtn.classList.remove("hidden");
 };
 
-/* ===== 로그아웃 ===== */
+/* 로그아웃 */
 window.logout = () => {
+  localStorage.removeItem("user");
   currentUser = null;
   stateText.textContent = "로그인 안 됨";
   logoutBtn.classList.add("hidden");
 };
 
-/* ===== 가치표 데이터 ===== */
+/* ===== 가치표 ===== */
 const items = [
  ["다이아","12 ~ 15","1",""],
  ["마그마 코어","2","1",""],
@@ -167,11 +166,7 @@ const items = [
  ["황금 망각의 스프","1","7++",""],
  ["황혼의 파편","1","5",""],
  ["잿빛 심장석","1","5",""],
- ["심홍의 청수","1","17++",""],
- ["선혈슬래쉬(스킬)","1","1~2+",""],
- ["일섬(스킬)","1","1~2+",""],
- ["저주혈검","1","60+","이세계에선 30+(추정)"],
- ["아이스 픽(스킬)","1","100+","추정"]
+ ["심홍의 청수","1","17++",""]
 ];
 
 const table = document.getElementById("itemTable");
@@ -194,26 +189,31 @@ window.filterItems = ()=>{
   renderTable(items.filter(i=>i[0].toLowerCase().includes(k)));
 };
 
-/* ===== 댓글 ===== */
+/* ===== 댓글 (실시간 + 박제) ===== */
 window.addComment = async ()=>{
-  if(!currentUser) return alert("로그인 필요");
+  if(!currentUser) return alert("로그인 해라");
   if(!commentText.value.trim()) return;
 
   await addDoc(collection(db,"comments"),{
-    user:currentUser,
-    text:commentText.value,
-    time:serverTimestamp()
+    user: currentUser,
+    text: commentText.value,
+    time: serverTimestamp()
   });
   commentText.value="";
 };
 
-onSnapshot(collection(db,"comments"), snap=>{
+const q = query(collection(db,"comments"), orderBy("time","desc"));
+onSnapshot(q, snap=>{
   commentList.innerHTML="";
   snap.forEach(d=>{
     const c=d.data();
-    commentList.innerHTML =
-      `<div class="comment"><strong>${c.user}</strong><br>${c.text}</div>`
-      + commentList.innerHTML;
+    const t = c.time?.toDate()?.toLocaleString() ?? "";
+    commentList.innerHTML +=
+      `<div class="comment">
+        <strong>${c.user}</strong>
+        <time> (${t})</time><br>
+        ${c.text}
+      </div>`;
   });
 });
 </script>
