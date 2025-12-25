@@ -2,23 +2,20 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>제목없는 RPG 가치표 | 강방권</title>
+<title>제목없는 RPG 가치표</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body { background:#111; color:#eee; font-family:Arial; padding:20px; }
 h1,h2 { text-align:center; }
 input,textarea,button {
-    width:100%; padding:10px; margin:5px 0;
-    background:#222; color:#eee; border:1px solid #444;
+  width:100%; padding:10px; margin:5px 0;
+  background:#222; color:#eee; border:1px solid #444;
 }
 button { cursor:pointer; }
-table { width:100%; border-collapse:collapse; }
-th,td { border:1px solid #444; padding:8px; text-align:center; }
 .hidden { display:none; }
 .comment { border:1px solid #333; padding:10px; margin:10px 0; background:#1a1a1a; }
 .comment strong { color:#6cf; }
-.top { display:flex; gap:5px; }
 </style>
 </head>
 
@@ -27,138 +24,113 @@ th,td { border:1px solid #444; padding:8px; text-align:center; }
 <h1>제목없는 RPG 가치표</h1>
 
 <!-- ===== 로그인 ===== -->
-<div id="authBox">
-  <input id="email" placeholder="이메일">
-  <input id="password" type="password" placeholder="비밀번호">
-  <div class="top">
-    <button onclick="signup()">회원가입</button>
-    <button onclick="login()">로그인</button>
-    <button onclick="logout()" id="logoutBtn" class="hidden">로그아웃</button>
-  </div>
-  <p id="userInfo">로그인 안 됨</p>
-</div>
-
-<hr>
-
-<!-- ===== 가치표 ===== -->
-<input id="search" placeholder="아이템 검색" onkeyup="filterItems()">
-
-<table>
-<thead>
-<tr>
-<th>아이템</th><th>수량</th><th>강방권 가치</th><th>비고</th>
-</tr>
-</thead>
-<tbody id="itemTable"></tbody>
-</table>
+<h2>🔐 로그인 / 회원가입</h2>
+<input id="nick" placeholder="닉네임">
+<input id="pw" type="password" placeholder="비밀번호">
+<button onclick="signup()">회원가입</button>
+<button onclick="login()">로그인</button>
+<button onclick="logout()" id="logoutBtn" class="hidden">로그아웃</button>
+<p id="loginState">로그인 안 됨</p>
 
 <hr>
 
 <!-- ===== 댓글 ===== -->
-<h2>💬 댓글 (로그인 필수)</h2>
+<h2>💬 댓글</h2>
 <textarea id="commentText" placeholder="로그인 후 댓글 작성 가능"></textarea>
 <button onclick="addComment()">댓글 작성</button>
 <div id="commentList"></div>
 
-<!-- ===== Firebase SDK ===== -->
+<!-- ===== Firebase ===== -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* 🔴 여기에 네 Firebase 설정 붙여넣기 */
+/* 🔴 네 Firebase 설정 붙여넣기 */
 const firebaseConfig = {
-  apiKey: "여기에_넣어",
-  authDomain: "여기에_넣어",
-  projectId: "여기에_넣어",
-  storageBucket: "여기에_넣어",
-  messagingSenderId: "여기에_넣어",
-  appId: "여기에_넣어"
+  apiKey: "여기에",
+  authDomain: "여기에",
+  projectId: "여기에",
+  storageBucket: "여기에",
+  messagingSenderId: "여기에",
+  appId: "여기에"
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth();
 const db = getFirestore();
 
-/* ===== 아이템 ===== */
-const items = [
- ["다이아","12~15","1",""],
- ["마그마 코어","2","1",""],
- ["태초의 빛","1","4",""],
- ["낙화참(스킬)","1","110++",""],
- ["검기(스킬)","1","150+++","추정"],
- ["아이스픽(스킬)","1","100+","추정"]
-];
+/* ===== 로그인 상태 ===== */
+let currentUser = null;
+const stateText = document.getElementById("loginState");
+const logoutBtn = document.getElementById("logoutBtn");
 
-const table = document.getElementById("itemTable");
-function renderTable(data){
-  table.innerHTML="";
-  data.forEach(i=>{
-    const tr=document.createElement("tr");
-    i.forEach(t=>{
-      const td=document.createElement("td");
-      td.textContent=t;
-      tr.appendChild(td);
-    });
-    table.appendChild(tr);
-  });
-}
-renderTable(items);
+/* ===== 회원가입 ===== */
+window.signup = async () => {
+  const n = nick.value.trim();
+  const p = pw.value.trim();
+  if (!n || !p) return alert("닉네임과 비밀번호 입력");
 
-function filterItems(){
-  const k=search.value.toLowerCase();
-  renderTable(items.filter(i=>i[0].toLowerCase().includes(k)));
-}
+  const q = query(collection(db,"users"), where("nick","==",n));
+  const snap = await getDocs(q);
+
+  if (!snap.empty) {
+    alert("이미 존재하는 닉네임입니다");
+    return;
+  }
+
+  await addDoc(collection(db,"users"), { nick:n, pw:p });
+  alert("회원가입 완료");
+};
 
 /* ===== 로그인 ===== */
-window.signup = () => {
-  createUserWithEmailAndPassword(auth,email.value,password.value)
-    .then(()=>alert("회원가입 완료"))
-    .catch(e=>alert(e.message));
-};
+window.login = async () => {
+  const q = query(
+    collection(db,"users"),
+    where("nick","==",nick.value),
+    where("pw","==",pw.value)
+  );
+  const snap = await getDocs(q);
 
-window.login = () => {
-  signInWithEmailAndPassword(auth,email.value,password.value)
-    .catch(e=>alert(e.message));
-};
-
-window.logout = () => signOut(auth);
-
-onAuthStateChanged(auth,user=>{
-  if(user){
-    userInfo.textContent=`로그인: ${user.email}`;
-    logoutBtn.classList.remove("hidden");
-  }else{
-    userInfo.textContent="로그인 안 됨";
-    logoutBtn.classList.add("hidden");
+  if (snap.empty) {
+    alert("닉네임 또는 비밀번호 오류");
+    return;
   }
-});
+
+  currentUser = nick.value;
+  stateText.textContent = `로그인: ${currentUser}`;
+  logoutBtn.classList.remove("hidden");
+};
+
+/* ===== 로그아웃 ===== */
+window.logout = () => {
+  currentUser = null;
+  stateText.textContent = "로그인 안 됨";
+  logoutBtn.classList.add("hidden");
+};
 
 /* ===== 댓글 ===== */
 window.addComment = async () => {
-  if(!auth.currentUser){
-    alert("로그인 후 작성 가능");
+  if (!currentUser) {
+    alert("로그인 후 댓글 작성 가능");
     return;
   }
-  if(!commentText.value.trim()) return;
+  if (!commentText.value.trim()) return;
 
-  await addDoc(collection(db,"comments"),{
-    user: auth.currentUser.email,
+  await addDoc(collection(db,"comments"), {
+    user: currentUser,
     text: commentText.value,
     time: serverTimestamp()
   });
-  commentText.value="";
+  commentText.value = "";
 };
 
-const q = query(collection(db,"comments"),orderBy("time","desc"));
-onSnapshot(q,snap=>{
-  commentList.innerHTML="";
-  snap.forEach(doc=>{
-    const d=doc.data();
-    commentList.innerHTML+=`
+onSnapshot(collection(db,"comments"), snap => {
+  commentList.innerHTML = "";
+  snap.forEach(d => {
+    const c = d.data();
+    commentList.innerHTML = `
       <div class="comment">
-        <strong>${d.user}</strong><br>${d.text}
-      </div>`;
+        <strong>${c.user}</strong><br>${c.text}
+      </div>` + commentList.innerHTML;
   });
 });
 </script>
