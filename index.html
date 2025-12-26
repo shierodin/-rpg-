@@ -15,10 +15,7 @@ body {
   font-family:Arial, sans-serif;
   padding:20px;
 }
-h1 {
-  text-align:center;
-  margin-bottom:20px;
-}
+h1 { text-align:center; margin-bottom:20px; }
 input {
   width:100%;
   padding:10px;
@@ -36,12 +33,8 @@ th, td {
   padding:8px;
   text-align:center;
 }
-th {
-  background:#222;
-}
-tr:hover {
-  background:#1e1e1e;
-}
+th { background:#222; }
+tr:hover { background:#1e1e1e; }
 </style>
 </head>
 
@@ -52,8 +45,8 @@ tr:hover {
 <input
   type="text"
   id="search"
-  placeholder="아이템 이름 검색"
-  onkeyup="filterItems()"
+  placeholder="아이템 이름 검색 (공백/괄호 무시)"
+  oninput="filterItems()"
 >
 
 <table>
@@ -106,6 +99,14 @@ const items = [
 
 const table = document.getElementById("itemTable");
 
+/* 문자열 정규화 (공백, 괄호 제거) */
+function normalize(str) {
+  return str
+    .toLowerCase()
+    .replace(/\s/g, "")
+    .replace(/[()]/g, "");
+}
+
 function renderTable(data) {
   table.innerHTML = "";
   data.forEach(item => {
@@ -120,8 +121,10 @@ function renderTable(data) {
 }
 
 function filterItems() {
-  const key = document.getElementById("search").value.toLowerCase();
-  renderTable(items.filter(i => i[0].toLowerCase().includes(key)));
+  const key = normalize(document.getElementById("search").value);
+  renderTable(
+    items.filter(i => normalize(i[0]).includes(key))
+  );
 }
 
 renderTable(items);
